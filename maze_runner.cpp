@@ -56,34 +56,36 @@ void print_maze() {
 
 // Função para verificar se uma posição é válida
 bool is_valid_position(int row, int col) {
-    // TODO: Implemente esta função
-    // 1. Verifique se a posição está dentro dos limites do labirinto
-    //    (row >= 0 && row < num_rows && col >= 0 && col < num_cols)
-    // 2. Verifique se a posição é um caminho válido (maze[row][col] == 'x')
-    // 3. Retorne true se ambas as condições forem verdadeiras, false caso contrário
-
-    return false; // Placeholder - substitua pela lógica correta
+    if ((row >= 0 && row < num_rows && col >= 0 && col < num_cols) || maze[row][col] == 'x') {
+        return true;
+    }
+    return false;
 }
 
 // Função principal para navegar pelo labirinto
 bool walk(Position pos) {
-    // TODO: Implemente a lógica de navegação aqui
-    // 1. Marque a posição atual como visitada (maze[pos.row][pos.col] = '.')
-    // 2. Chame print_maze() para mostrar o estado atual do labirinto
-    // 3. Adicione um pequeno atraso para visualização:
-    //    std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    // 4. Verifique se a posição atual é a saída (maze[pos.row][pos.col] == 's')
-    //    Se for, retorne true
-    // 5. Verifique as posições adjacentes (cima, baixo, esquerda, direita)
-    //    Para cada posição adjacente:
-    //    a. Se for uma posição válida (use is_valid_position()), adicione-a à pilha valid_positions
-    // 6. Enquanto houver posições válidas na pilha (!valid_positions.empty()):
-    //    a. Remova a próxima posição da pilha (valid_positions.top() e valid_positions.pop())
-    //    b. Chame walk recursivamente para esta posição
-    //    c. Se walk retornar true, propague o retorno (retorne true)
-    // 7. Se todas as posições foram exploradas sem encontrar a saída, retorne false
-    
-    return false; // Placeholder - substitua pela lógica correta
+    maze[pos.row][pos.col] = '.';
+    print_maze();
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    if(maze[pos.row][pos.col] == 's')
+        return true;
+    std::vector<Position> moves = {
+        {pos.row - 1, pos.col}, {pos.row + 1, pos.col},
+        {pos.row, pos.col - 1}, {pos.row, pos.col + 1}};
+
+    for (const auto& next : moves) {
+        if (is_valid_position(next.row, next.col)) {
+            valid_positions.push(next);
+        }
+    }
+    while (!valid_positions.empty()) {
+        Position next_pos = valid_positions.top();
+        valid_positions.pop();
+
+        if (walk(next_pos)) return true;
+    }
+
+    return false;
 }
 
 int main(int argc, char* argv[]) {
