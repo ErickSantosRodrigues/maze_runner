@@ -21,25 +21,37 @@ int num_cols;
 std::stack<Position> valid_positions;
 
 // Função para carregar o labirinto de um arquivo
+// Retorna a posição inicial do labirinto
 Position load_maze(const std::string& file_name) {
-    // TODO: Implemente esta função seguindo estes passos:
-    // 1. Abra o arquivo especificado por file_name usando std::ifstream
-    // 2. Leia o número de linhas e colunas do labirinto
-    // 3. Redimensione a matriz 'maze' de acordo (use maze.resize())
-    // 4. Leia o conteúdo do labirinto do arquivo, caractere por caractere
-    // 5. Encontre e retorne a posição inicial ('e')
-    // 6. Trate possíveis erros (arquivo não encontrado, formato inválido, etc.)
-    // 7. Feche o arquivo após a leitura
+    std::ifstream file(file_name);
+    Position initial_pos = {0, 0};
+
+    file >> num_rows >> num_cols;
+    maze.resize(num_rows, std::vector<char>(num_cols));
+    for(int i = 0; i < num_rows; i++) {
+        for(int j = 0; j < num_cols; j++) {
+            file >> maze[i][j];
+            if (maze[i][j] == 'i') {
+                return {i, j};
+            }
+        }
+    }
+
+    file.close();
+    return initial_pos;
     
-    return {-1, -1}; // Placeholder - substitua pelo valor correto
+    
 }
 
 // Função para imprimir o labirinto
 void print_maze() {
-    // TODO: Implemente esta função
-    // 1. Percorra a matriz 'maze' usando um loop aninhado
-    // 2. Imprima cada caractere usando std::cout
-    // 3. Adicione uma quebra de linha (std::cout << '\n') ao final de cada linha do labirinto
+    for(int i = 0; i < num_rows; i++) {
+        for(int j = 0; j < num_cols; j++) {
+            std::cout << maze[i][j];
+        }
+        std::cout << "\n";
+    }
+    std::cout << "\n";
 }
 
 // Função para verificar se uma posição é válida
