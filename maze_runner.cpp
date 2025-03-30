@@ -18,6 +18,7 @@ struct Position {
 Maze maze;
 int num_rows;
 int num_cols;
+bool s_found = false;
 std::stack<Position> valid_positions;
 
 // Função para carregar o labirinto de um arquivo
@@ -25,7 +26,6 @@ std::stack<Position> valid_positions;
 Position load_maze(const std::string& file_name) {
     std::ifstream file(file_name);
     Position initial_pos = {-1, -1};
-
     file >> num_rows >> num_cols;
     maze.resize(num_rows, std::vector<char>(num_cols));
     for(int i = 0; i < num_rows; i++) {
@@ -45,6 +45,10 @@ Position load_maze(const std::string& file_name) {
 
 // Função para imprimir o labirinto
 void print_maze() {
+    if (s_found)
+        return;
+    system("clear");
+    std::cout << "\n";
     for(int i = 0; i < num_rows; i++) {
         for(int j = 0; j < num_cols; j++) {
             std::cout << maze[i][j];
@@ -53,25 +57,42 @@ void print_maze() {
     }
     std::cout << "\n";
 }
-
+//TODO: como diversas threads estão sendo acionadas, algumas não modificão 
 // Função para verificar se uma posição é válida
 bool is_valid_position(int row, int col) {
     if (row >= 0 && row < num_rows && col >= 0 &&
         col >= 0 && col < num_cols && 
         (maze[row][col] == 'x' || maze[row][col] == 's')) 
         return true;
+    
     return false;
 }
 
 // Função principal para navegar pelo labirinto
-bool walk(Position pos) {
+void walk(Position pos) {
     //clear cmd prompt
-    system("cls");
     print_maze();
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-    if(maze[pos.row][pos.col] == 's')
-        return true;
+    if(maze[pos.row][pos.col] == 's'){
+        s_found = true;
+        for(int i = 0; i < num_rows; i++) {
+            for(int j = 0; j < num_cols; j++) {
+                std::cout << maze[i][j];
+            }
+            std::cout << "\n";
+        }
+        std::cout << "\n";
+        return;
+    }
+    // algumas threads são criadas no meio tempo entre a thread de um caminho existente
+    // passar naquele caminho valido e outra thead verificar se a posição é válida
+    // Isso Cria uma nova thread para um caminho que já não é mais válido e pode dar corrupção de memoria
+    
+    // AINDA NÂO RESOLVEU PARA O maze3.txt 
+    else if (maze[pos.row][pos.col] == '.')    
+        return;
+
     maze[pos.row][pos.col] = '.';
     std::vector<Position> moves = {
         {pos.row - 1, pos.col}, {pos.row + 1, pos.col},
@@ -82,14 +103,28 @@ bool walk(Position pos) {
             valid_positions.push(next);
         }
     }
-    while (!valid_positions.empty()) {
+    if (valid_positions.empty())
+        return;
+
+    //chamar threads para cada saida extra depois da primeira
+    std::vector<std::thread> threads;
+    while (!valid_positions.empty() ) {
         Position next_pos = valid_positions.top();
         valid_positions.pop();
+        // continua no caminho
+        if(valid_positions.size() == 0)
+            walk(next_pos);
+        else
+            threads.emplace_back(walk, next_pos);
 
-        if (walk(next_pos)) return true;
+    }
+    //
+    for (auto& t : threads) {
+        if (t.joinable()) {
+            t.join();
+        }
     }
 
-    return false;
 }
 
 int main(int argc, char* argv[]) {
@@ -104,9 +139,10 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    bool exit_found = walk(initial_pos);
 
-    if (exit_found) {
+    walk(initial_pos);
+
+    if (s_found) {
         std::cout << "Saida encontrada!" << std::endl;
     } else {
         std::cout << "Nao foi possivel encontrar a saida." << std::endl;
